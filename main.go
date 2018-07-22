@@ -54,6 +54,13 @@ func (slice FrameSizes) Swap(i, j int) {
 }
 
 func main() {
+	err := termbox.Init()
+	if err != nil {
+		panic(err)
+	}
+	termbox.SetOutputMode(termbox.Output256)
+	defer termbox.Close()
+
 	cam, err := webcam.Open("/dev/video0")
 	if err != nil {
 		panic(err.Error())
@@ -61,30 +68,29 @@ func main() {
 	defer cam.Close()
 
 	formatDesc := cam.GetSupportedFormats()
-	var formats []webcam.PixelFormat
-	for f := range formatDesc {
-		formats = append(formats, f)
+	var mpegFormat *webcam.PixelFormat
+	for f, v := range formatDesc {
+		if v == "Motion-JPEG" {
+			x := f
+			mpegFormat = &x
+		}
 	}
-
-	println("Available formats: ")
-	for i, value := range formats {
-		fmt.Fprintf(os.Stderr, "[%d] %s\n", i+1, formatDesc[value])
+	if mpegFormat == nil {
+		panic(fmt.Errorf("Webcam does not support Motion-JPEG mode"))
 	}
-
-	choice := readChoice(fmt.Sprintf("Choose format [1-%d]: ", len(formats)))
-	format := formats[choice-1]
-
-	fmt.Fprintf(os.Stderr, "Supported frame sizes for format %s\n", formatDesc[format])
-	frames := FrameSizes(cam.GetSupportedFrameSizes(format))
+	frames := FrameSizes(cam.GetSupportedFrameSizes(*mpegFormat))
 	sort.Sort(frames)
 
-	for i, value := range frames {
-		fmt.Fprintf(os.Stderr, "[%d] %s\n", i+1, value.GetString())
+	var chosenSize webcam.FrameSize
+	termWidth, termHeight := termbox.Size()
+	for _, value := range frames {
+		chosenSize = value
+		if int(value.MinWidth) > termWidth && int(value.MinHeight) > termHeight {
+			break
+		}
 	}
-	choice = readChoice(fmt.Sprintf("Choose format [1-%d]: ", len(frames)))
-	size := frames[choice-1]
 
-	f, w, h, err := cam.SetImageFormat(format, uint32(size.MaxWidth), uint32(size.MaxHeight))
+	f, w, h, err := cam.SetImageFormat(*mpegFormat, uint32(chosenSize.MaxWidth), uint32(chosenSize.MaxHeight))
 
 	if err != nil {
 		panic(err.Error())
@@ -92,19 +98,10 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Resulting image format: %s (%dx%d)\n", formatDesc[f], w, h)
 	}
 
-	println("Press Enter to start streaming")
-	fmt.Scanf("\n")
 	err = cam.StartStreaming()
 	if err != nil {
 		panic(err.Error())
 	}
-
-	err = termbox.Init()
-	if err != nil {
-		panic(err)
-	}
-	termbox.SetOutputMode(termbox.Output256)
-	defer termbox.Close()
 
 	eventQueue := make(chan termbox.Event)
 	go func() {
