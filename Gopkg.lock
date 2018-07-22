@@ -11,6 +11,18 @@
   version = "v0.3"
 
 [[projects]]
+  name = "github.com/mattn/go-runewidth"
+  packages = ["."]
+  revision = "9e777a8366cce605130a531d2cd6363d07ad7317"
+  version = "v0.0.2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/nsf/termbox-go"
+  packages = ["."]
+  revision = "5c94acc5e6eb520f1bcd183974e01171cc4c23b3"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/image"
   packages = [
@@ -28,6 +40,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c0aac8306b222d821a9df173539152f60ad40058f4a1cda50a1bf6565a46a648"
+  inputs-digest = "3485da46d641aff43420d59f32cde55562f70206f41d07ac9c6c432bda7917af"
   solver-name = "gps-cdcl"
   solver-version = 1
