@@ -7,3 +7,7 @@ Only works on Linux since the `github.com/blackjack/webcam` dependency only work
 ```
 $ go get github.com/AstromechZA/scream
 ```
+
+## Example
+
+![wave example](_examples/wave.svg)
