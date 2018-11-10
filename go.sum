@@ -1,0 +1,10 @@
+github.com/blackjack/webcam v0.0.0-20160702163401-dba29cd98b67 h1:8Oc8uS3apz5Fne2ZNQMFrDiFCiprU6Ml4DRBvgD4u4g=
+github.com/blackjack/webcam v0.0.0-20160702163401-dba29cd98b67/go.mod h1:G0X+rEqYPWSq0dG8OMf8M446MtKytzpPjgS3HbdOJZ4=
+github.com/mattn/go-runewidth v0.0.2 h1:UnlwIPBGaTZfPQ6T1IGzPI0EkYAQmT9fAEJ/poFC63o=
+github.com/mattn/go-runewidth v0.0.2/go.mod h1:LwmH8dsx7+W8Uxz3IHJYH5QSwggIsqBzpuz5H//U1FU=
+github.com/nsf/termbox-go v0.0.0-20180613055208-5c94acc5e6eb h1:YahEjAGkJtCrkqgVHhX6n8ZX+CZ3hDRL9fjLYugLfSs=
+github.com/nsf/termbox-go v0.0.0-20180613055208-5c94acc5e6eb/go.mod h1:IuKpRQcYE1Tfu+oAQqaLisqDeXgjyyltCfsaoYN18NQ=
+golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81 h1:00VmoueYNlNz/aHIilyyQz/MHSqGoWJzpFv/HW8xpzI=
+golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81/go.mod h1:ux5Hcp/YLpHSI86hEcLt0YII63i6oz57MZXIpbrjZUs=
+golang.org/x/sys v0.0.0-20180715085529-ac767d655b30 h1:4bYUqrXBoiI7UFQeibUwFhvcHfaEeL75O3lOcZa964o=
+golang.org/x/sys v0.0.0-20180715085529-ac767d655b30/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
