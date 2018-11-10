@@ -77,18 +77,18 @@ func mainInner() error {
 		return fmt.Errorf("no positional arguments expected")
 	}
 
-	err := termbox.Init()
-	if err != nil {
-		return fmt.Errorf("failed to init termbox: %s", err)
-	}
-	termbox.SetOutputMode(termbox.Output256)
-	defer termbox.Close()
-
 	cam, err := webcam.Open(*deviceFlag)
 	if err != nil {
 		return fmt.Errorf("failed to open webcam '%s': %s", *deviceFlag, err)
 	}
 	defer cam.Close()
+
+	err = termbox.Init()
+	if err != nil {
+		return fmt.Errorf("failed to init termbox: %s", err)
+	}
+	termbox.SetOutputMode(termbox.Output256)
+	defer termbox.Close()
 
 	formatDesc := cam.GetSupportedFormats()
 	var mpegFormat *webcam.PixelFormat
