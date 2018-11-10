@@ -8,32 +8,20 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"image"
 	"image/jpeg"
 	"math"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/blackjack/webcam"
-	termbox "github.com/nsf/termbox-go"
+	"github.com/nsf/termbox-go"
 
 	"golang.org/x/image/draw"
 )
-
-func readChoice(s string) int {
-	var i int
-	for true {
-		print(s)
-		_, err := fmt.Scanf("%d\n", &i)
-		if err != nil || i < 1 {
-			println("Invalid input. Try again")
-		} else {
-			break
-		}
-	}
-	return i
-}
 
 type FrameSizes []webcam.FrameSize
 
@@ -53,17 +41,52 @@ func (slice FrameSizes) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-func main() {
+func rgbaToAnsi(r, g, b uint32) uint16 {
+	var fr, fg, fb float64
+	fr = float64(r) / 65535.0
+	fg = float64(g) / 65535.0
+	fb = float64(b) / 65535.0
+
+	if fr == fg && fr == fb && fr != 0.0 && fr != 1.0 {
+		return 0xe9 + uint16(math.Round(24*fr))
+	}
+
+	return 0x11 + 36*uint16(math.Round(fr*5)) +
+		6*uint16(math.Round(fg*5)) +
+		uint16(math.Round(fb*5))
+}
+
+const mainUsage = `%s streams a given webcam device to your terminal as a mesh of pixels.
+
+`
+
+func mainInner() error {
+	fs := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+	deviceFlag := fs.String("device", "/dev/video0", "The webcam device to open")
+
+	fs.Usage = func() {
+		fmt.Fprintf(os.Stderr, mainUsage, filepath.Base(os.Args[0]))
+		fs.PrintDefaults()
+	}
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		return err
+	}
+	if fs.NArg() != 0 {
+		fs.Usage()
+		fmt.Fprintf(os.Stderr, "\n")
+		return fmt.Errorf("no positional arguments expected")
+	}
+
 	err := termbox.Init()
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to init termbox: %s", err)
 	}
 	termbox.SetOutputMode(termbox.Output256)
 	defer termbox.Close()
 
-	cam, err := webcam.Open("/dev/video0")
+	cam, err := webcam.Open(*deviceFlag)
 	if err != nil {
-		panic(err.Error())
+		return fmt.Errorf("failed to open webcam '%s': %s", *deviceFlag, err)
 	}
 	defer cam.Close()
 
@@ -76,7 +99,7 @@ func main() {
 		}
 	}
 	if mpegFormat == nil {
-		panic(fmt.Errorf("Webcam does not support Motion-JPEG mode"))
+		return fmt.Errorf("webcam does not support Motion-JPEG mode (%#v)", formatDesc)
 	}
 	frames := FrameSizes(cam.GetSupportedFrameSizes(*mpegFormat))
 	sort.Sort(frames)
@@ -93,14 +116,14 @@ func main() {
 	f, w, h, err := cam.SetImageFormat(*mpegFormat, uint32(chosenSize.MaxWidth), uint32(chosenSize.MaxHeight))
 
 	if err != nil {
-		panic(err.Error())
+		return fmt.Errorf("failed to set image format: %s", err)
 	} else {
 		fmt.Fprintf(os.Stderr, "Resulting image format: %s (%dx%d)\n", formatDesc[f], w, h)
 	}
 
 	err = cam.StartStreaming()
 	if err != nil {
-		panic(err.Error())
+		return fmt.Errorf("failed to start streaming: %s", err)
 	}
 
 	eventQueue := make(chan termbox.Event)
@@ -116,8 +139,13 @@ A:
 	for {
 		select {
 		case ev := <-eventQueue:
-			if ev.Type == termbox.EventKey && ev.Key == termbox.KeyEsc {
-				break A
+			if ev.Type == termbox.EventKey {
+				switch ev.Key {
+				case termbox.KeyCtrlC:
+					fallthrough
+				case termbox.KeyEsc:
+					break A
+				}
 			}
 		default:
 			err = cam.WaitForFrame(timeout)
@@ -128,7 +156,7 @@ A:
 				fmt.Fprint(os.Stderr, err.Error())
 				continue
 			default:
-				panic(err.Error())
+				return fmt.Errorf("failed to get frame: %s", err)
 			}
 
 			frame, err := cam.ReadFrame()
@@ -151,23 +179,16 @@ A:
 				}
 
 			} else if err != nil {
-				panic(err.Error())
+				return fmt.Errorf("failed to decode frame: %s", err)
 			}
 		}
 	}
+	return nil
 }
 
-func rgbaToAnsi(r, g, b uint32) uint16 {
-	var fr, fg, fb float64
-	fr = float64(r) / 65535.0
-	fg = float64(g) / 65535.0
-	fb = float64(b) / 65535.0
-
-	if fr == fg && fr == fb && fr != 0.0 && fr != 1.0 {
-		return 0xe9 + uint16(math.Round(24*fr))
+func main() {
+	if err := mainInner(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
 	}
-
-	return 0x11 + 36*uint16(math.Round(fr*5)) +
-		6*uint16(math.Round(fg*5)) +
-		uint16(math.Round(fb*5))
 }
